@@ -6,9 +6,10 @@ from scraper import get_new_posts
 
 load_dotenv()
 
-TOKEN = os.getenv("DISCORD_TOKEN")
-CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
-poll_interval = int(os.environ['POLL_INTERVAL'])
+TOKEN = os.getenv('DISCORD_TOKEN')
+CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
+POLL_INTERVAL = int(os.environ['POLL_INTERVAL'])
+SEEN_FILE = 'seen_posts.json'
 
 intents = discord.Intents.default()
 intents.members = True
@@ -18,31 +19,30 @@ bot = discord.Client(intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f"Bot is online as {bot.user}")
+    print(f'Bot is online as {bot.user}')
     await seed_seen_posts()
     poll_news.start()
 
 async def seed_seen_posts():
-    SEEN_FILE = "seen_posts.json"
     if not os.path.exists(SEEN_FILE) or os.path.getsize(SEEN_FILE) == 0:
-        print("First run detected — seeding seen posts without posting...")
+        print('First run detected — seeding seen posts without posting...')
         get_new_posts(seed=True)
-        print("Seeding done. Bot will now only post new tweets going forward.")
+        print('Seeding done. Bot will now only post new tweets going forward.')
 
-@tasks.loop(seconds=poll_interval)
+@tasks.loop(seconds=POLL_INTERVAL)
 async def poll_news():
     channel = bot.get_channel(CHANNEL_ID)
     if not channel:
-        print("Channel not found!")
+        print('Channel not found!')
         return
 
     posts = get_new_posts()
 
     for post in posts:
-        message = post["summary"]
+        message = post['summary']
         
-        if post.get("media"):
-            message += f"\n{post['media']}"
+        # if post.get('media'):
+        #     message += f'\n{post['media']}'
 
         await channel.send(message)
         
