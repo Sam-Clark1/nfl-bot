@@ -1,7 +1,7 @@
 import discord
 from discord.ext import tasks
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv # pyright: ignore[reportMissingImports]
 from scraper import get_new_posts
 
 load_dotenv()
@@ -23,8 +23,6 @@ async def on_ready():
     poll_news.start()
 
 async def seed_seen_posts():
-    from scraper import get_new_posts
-    import os, json
     SEEN_FILE = "seen_posts.json"
     if not os.path.exists(SEEN_FILE) or os.path.getsize(SEEN_FILE) == 0:
         print("First run detected — seeding seen posts without posting...")
