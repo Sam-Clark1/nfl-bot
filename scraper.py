@@ -1,9 +1,8 @@
-import feedparser
+import feedparser # pyright: ignore[reportMissingImports]
 import json
 import os
 import hashlib
-from html.parser import HTMLParser
-from dotenv import load_dotenv
+from dotenv import load_dotenv # pyright: ignore[reportMissingImports]
 
 load_dotenv()
 rss_url = os.environ['RSS_URL']
