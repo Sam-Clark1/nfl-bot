@@ -2,6 +2,7 @@ import feedparser # pyright: ignore[reportMissingImports]
 import json
 import os
 import hashlib
+import re
 from dotenv import load_dotenv # pyright: ignore[reportMissingImports]
 
 load_dotenv()
@@ -46,8 +47,9 @@ def get_new_posts(seed=False) -> list[dict]:
                 seen.add(post_id)
 
                 if not seed:
+                    summary = re.sub(r'\s*https?://\S+$', '', entry.get("summary", "")).strip()
                     new_posts.append({
-                        "summary": entry.get("summary", ""),
+                        "summary": summary,
                         # "media": get_media(entry),
                     })
                     
