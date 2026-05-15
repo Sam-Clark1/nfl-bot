@@ -1,8 +1,8 @@
 import feedparser # pyright: ignore[reportMissingImports]
 import json
 import os
-import hashlib
 import re
+from urllib.parse import unquote
 from dotenv import load_dotenv # pyright: ignore[reportMissingImports]
 
 load_dotenv()
@@ -20,24 +20,37 @@ def save_seen(seen):
     with open(SEEN_FILE, "w") as f:
         json.dump(list(seen), f)
 
-# def get_media(entry) -> str:
-#     """Extract image or video URL from a feed entry if present."""
-#     # Check media_content (common in RSS/Nitter)
-#     if hasattr(entry, "media_content") and entry.media_content:
-#         return entry.media_content[0].get("url", "")
+def nitter_img_to_direct(url: str) -> str:
+    if '/pic/' in url:
+        path = unquote(url.split('/pic/', 1)[1])
+        return f"https://pbs.twimg.com/{path}"
+    return url
 
-#     # Check enclosures (another common RSS media field)
-#     if hasattr(entry, "enclosures") and entry.enclosures:
-#         return entry.enclosures[0].get("href", "")
+def _nitter_to_vxtwitter(url: str) -> str:
+    match = re.search(r'nitter\.[^/]+/([^/]+)/status/(\d+)', url)
+    if match:
+        username, tweet_id = match.groups()
+        return f"https://vxtwitter.com/{username}/status/{tweet_id}"
+    return url
 
-#     return ""
+def extract_media(html: str) -> dict:
+    html = re.sub(r'<blockquote.*?</blockquote>', '', html, flags=re.DOTALL)
+
+    video_match = re.search(r'<a href="([^"]+)"[^>]*>.*?Video.*?</a>', html, flags=re.DOTALL)
+    video_url = _nitter_to_vxtwitter(video_match.group(1)) if video_match else None
+
+    if video_url:
+        html = re.sub(r'<a href="[^"]+">.*?Video.*?</a>', '', html, flags=re.DOTALL)
+
+    images = [nitter_img_to_direct(src) for src in re.findall(r'<img[^>]+src="([^"]+)"', html)]
+
+    return {"images": images, "video_url": video_url}
 
 def get_new_posts(seed=False) -> list[dict]:
     seen = load_seen()
     new_posts = []
 
     try:
-
         feed = feedparser.parse(RSS_URL, request_headers={"User-Agent": "Mozilla/5.0"})
 
         for entry in feed.entries:
@@ -47,12 +60,14 @@ def get_new_posts(seed=False) -> list[dict]:
                 seen.add(post_id)
 
                 if not seed:
-                    summary = re.sub(r'\s*https?://\S+$', '', entry.get("summary", "")).strip()
+                    media = extract_media(entry.get("summary", ""))
+                    title = re.sub(r'^RT by @\w+:\s*', '', entry.get("title", ""))
                     new_posts.append({
-                        "summary": summary,
-                        # "media": get_media(entry),
+                        "text": title,
+                        "images": media["images"],
+                        "video_url": media["video_url"],
                     })
-                    
+
     except Exception as e:
         print(f"Error fetching NFL feed: {e}")
 
