@@ -1,6 +1,8 @@
 import discord
 from discord.ext import tasks
 import os
+import io
+import aiohttp # pyright: ignore[reportMissingImports]
 from dotenv import load_dotenv # pyright: ignore[reportMissingImports]
 from scraper import get_new_posts
 
@@ -20,7 +22,7 @@ bot = discord.Client(intents=intents)
 @bot.event
 async def on_ready():
     print(f'Bot is online as {bot.user}')
-    await seed_seen_posts()
+    # await seed_seen_posts()
     poll_news.start()
 
 async def seed_seen_posts():
@@ -28,6 +30,20 @@ async def seed_seen_posts():
         print('First run detected — seeding seen posts without posting...')
         get_new_posts(seed=True)
         print('Seeding done. Bot will now only post new tweets going forward.')
+
+async def download_images(urls: list[str]) -> list[discord.File]:
+    files = []
+    async with aiohttp.ClientSession() as session:
+        for url in urls:
+            try:
+                async with session.get(url) as resp:
+                    if resp.status == 200:
+                        data = await resp.read()
+                        filename = url.split('/')[-1].split('?')[0] or 'image.jpg'
+                        files.append(discord.File(io.BytesIO(data), filename=filename))
+            except Exception as e:
+                print(f"Failed to download image {url}: {e}")
+    return files
 
 @tasks.loop(seconds=POLL_INTERVAL)
 async def poll_news():
@@ -39,11 +55,11 @@ async def poll_news():
     posts = get_new_posts()
 
     for post in posts:
-        message = post['summary']
-        
-        # if post.get('media'):
-        #     message += f'\n{post['media']}'
+        content = f"<#{CHANNEL_ID}>\n\n{post['text']}"
+        if post.get('video_url'):
+            content += f"\n{post['video_url']}"
 
-        await channel.send(message)
-        
+        files = await download_images(post.get('images', []))
+        await channel.send(content=content, files=files)
+
 bot.run(TOKEN)
