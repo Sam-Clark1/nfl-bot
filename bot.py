@@ -55,7 +55,7 @@ async def poll_news():
     posts = get_new_posts()
 
     for post in posts:
-        content = f"<#{CHANNEL_ID}>\n\n{post['text']}"
+        content = f"<#{CHANNEL_ID}>\n{post['text']}"
         if post.get('video_url'):
             content += f"\n{post['video_url']}"
 

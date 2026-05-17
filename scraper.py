@@ -26,7 +26,7 @@ def nitter_img_to_direct(url: str) -> str:
         return f"https://pbs.twimg.com/{path}"
     return url
 
-def _nitter_to_vxtwitter(url: str) -> str:
+def nitter_to_vxtwitter(url: str) -> str:
     match = re.search(r'nitter\.[^/]+/([^/]+)/status/(\d+)', url)
     if match:
         username, tweet_id = match.groups()
@@ -37,7 +37,7 @@ def extract_media(html: str) -> dict:
     html = re.sub(r'<blockquote.*?</blockquote>', '', html, flags=re.DOTALL)
 
     video_match = re.search(r'<a href="([^"]+)"[^>]*>.*?Video.*?</a>', html, flags=re.DOTALL)
-    video_url = _nitter_to_vxtwitter(video_match.group(1)) if video_match else None
+    video_url = nitter_to_vxtwitter(video_match.group(1)) if video_match else None
 
     if video_url:
         html = re.sub(r'<a href="[^"]+">.*?Video.*?</a>', '', html, flags=re.DOTALL)
