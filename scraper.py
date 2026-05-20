@@ -33,14 +33,16 @@ def nitter_to_vxtwitter(url: str) -> str:
         return f"https://vxtwitter.com/{username}/status/{tweet_id}"
     return url
 
+VIDEO_PATTERN = r'<a href="([^"]+/status/\d+[^"]*)"[^>]*>.*?Video.*?</a>'
+
 def extract_media(html: str) -> dict:
     html = re.sub(r'<blockquote.*?</blockquote>', '', html, flags=re.DOTALL)
 
-    video_match = re.search(r'<a href="([^"]+)"[^>]*>.*?Video.*?</a>', html, flags=re.DOTALL)
+    video_match = re.search(VIDEO_PATTERN, html, flags=re.DOTALL)
     video_url = nitter_to_vxtwitter(video_match.group(1)) if video_match else None
 
     if video_url:
-        html = re.sub(r'<a href="[^"]+">.*?Video.*?</a>', '', html, flags=re.DOTALL)
+        html = re.sub(VIDEO_PATTERN, '', html, flags=re.DOTALL)
 
     images = [nitter_img_to_direct(src) for src in re.findall(r'<img[^>]+src="([^"]+)"', html)]
 
