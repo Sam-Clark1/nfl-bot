@@ -62,8 +62,10 @@ def get_new_posts(seed=False) -> list[dict]:
                 seen.add(post_id)
 
                 if not seed:
+                    title = entry.get("title", "")
+                    if re.match(r'^RT by @', title):
+                        continue
                     media = extract_media(entry.get("summary", ""))
-                    title = re.sub(r'^RT by @\w+:\s*', '', entry.get("title", ""))
                     new_posts.append({
                         "text": title,
                         "images": media["images"],
