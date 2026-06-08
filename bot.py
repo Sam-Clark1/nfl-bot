@@ -11,7 +11,7 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
 POLL_INTERVAL = int(os.environ['POLL_INTERVAL'])
-SEEN_FILE = 'seen_posts.json'
+SEEN_FILE = os.getenv('SEEN_FILE')
 
 intents = discord.Intents.default()
 intents.members = True

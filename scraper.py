@@ -8,17 +8,27 @@ from dotenv import load_dotenv # pyright: ignore[reportMissingImports]
 load_dotenv()
 
 RSS_URL = os.environ['RSS_URL']
-SEEN_FILE = "seen_posts.json"
+SEEN_FILE = os.environ['SEEN_FILE']
+MAX_SEEN = 40
 
 def load_seen():
     if os.path.exists(SEEN_FILE):
         with open(SEEN_FILE, "r") as f:
-            return set(json.load(f))
-    return set()
+            return list(json.load(f))
+    return list()
 
 def save_seen(seen):
     with open(SEEN_FILE, "w") as f:
         json.dump(list(seen), f)
+
+def add_seen(seen, post_id, seed):
+    if not seed: 
+        seen.insert(0, post_id)
+        if len(seen) > MAX_SEEN:
+            del seen[-1]
+    elif seed: 
+        seen.append(post_id)
+    return seen
 
 def nitter_img_to_direct(url: str) -> str:
     if '/pic/' in url:
@@ -59,7 +69,8 @@ def get_new_posts(seed=False) -> list[dict]:
             post_id = entry.get("id").split("/")[-1]
 
             if post_id not in seen:
-                seen.add(post_id)
+
+                seen = add_seen(seen, post_id, seed)
 
                 if not seed:
                     title = entry.get("title", "")
