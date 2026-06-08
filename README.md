@@ -6,7 +6,7 @@ A Discord bot that monitors an NFL news Twitter account via a Nitter RSS feed an
 
 The bot polls a Nitter RSS feed on a configurable interval. When new posts are detected, it parses the tweet text and extracts any media from the HTML description. Images are downloaded and sent as file attachments so Discord displays them in a grid. Video tweets are converted to vxtwitter.com links so Discord can render an inline video player. A channel mention is prepended to each message as a header.
 
-Post IDs are persisted in `seen_posts.json` so the bot never reposts content across restarts.
+Post IDs are persisted in `seen_posts.json` so the bot never reposts content across restarts. Number of posts in json file capped at 40 since RSS data only shows ~20 of most recent posts. 
 
 ## Project Structure
 
@@ -42,6 +42,7 @@ Create a `.env` file in the project root:
 DISCORD_TOKEN = your_bot_token_here
 CHANNEL_ID = your_channel_id_here
 RSS_URL = "https://nitter.net/{X/Twitter Handle}/rss"
+SEEN_FILE = "<name_of_file>.json"
 POLL_INTERVAL = 60
 ```
 
@@ -50,6 +51,7 @@ POLL_INTERVAL = 60
 | `DISCORD_TOKEN` | Your Discord bot token |
 | `CHANNEL_ID` | ID of the channel the bot posts to |
 | `RSS_URL` | Nitter RSS feed URL to monitor |
+| `SEEN_FILE` | Name you want for generated seen posts .json file |
 | `POLL_INTERVAL` | How often to check for new posts, in seconds |
 
 To get a channel ID, enable Developer Mode in Discord (Settings > Advanced), then right-click the channel and select Copy Channel ID.
