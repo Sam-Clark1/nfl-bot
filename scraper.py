@@ -65,6 +65,8 @@ def get_new_posts(seed=False) -> list[dict]:
                     title = entry.get("title", "")
                     if re.match(r'^RT by @', title):
                         continue
+                    if re.match(r'^R to @', title):
+                        continue
                     media = extract_media(entry.get("summary", ""))
                     new_posts.append({
                         "text": title,
