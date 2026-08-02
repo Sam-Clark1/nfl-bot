@@ -1,10 +1,10 @@
-import feedparser # pyright: ignore[reportMissingImports]
+import feedparser
 import json
 import os
 import re
-from bs4 import BeautifulSoup # pyright: ignore[reportMissingImports]
+from bs4 import BeautifulSoup
 from urllib.parse import unquote
-from dotenv import load_dotenv # pyright: ignore[reportMissingImports]
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -47,14 +47,18 @@ UNDESIRED_LINK_PATTERN = re.compile(
 def strip_underdog_links(text: str) -> str:
     cleaned = UNDESIRED_LINK_PATTERN.sub('', text)
     cleaned = re.sub(r'[ \t]+', ' ', cleaned)
-    cleaned = re.sub(r'\n\s*\n', '\n', cleaned)
     return cleaned.strip()
 
 def has_quoted_tweet(html: str) -> bool:
     return bool(BeautifulSoup(html, "html.parser").find("blockquote"))
 
-def extract_media(html: str, username: str, post_id: str) -> dict:
+def extract_post(html: str, username: str, post_id: str) -> dict:
     soup = BeautifulSoup(html, "html.parser")
+
+    for br in soup.find_all('br'):
+        br.replace_with('\n')
+    for p in soup.find_all('p'):
+        p.insert_after('\n\n')
 
     video_node = soup.find(string=re.compile(r'^\s*Video\s*$'))
     has_video = bool(video_node)
@@ -72,7 +76,12 @@ def extract_media(html: str, username: str, post_id: str) -> dict:
         if img.get('src')
     ]
 
-    return {"images": images, "video_url": video_url}
+    text = soup.get_text()
+    text = strip_underdog_links(text)
+    text = "\n".join(line.strip() for line in text.split("\n"))
+    text = re.sub(r'\n{3,}', '\n\n', text).strip()
+
+    return {"text": text, "images": images, "video_url": video_url}
 
 def get_new_posts(seed=False) -> list[dict]:
     seen = load_seen()
@@ -101,14 +110,12 @@ def get_new_posts(seed=False) -> list[dict]:
                         continue
 
                     username = entry.get("author", "").lstrip('@')
-                    media = extract_media(summary, username, post_id)
-
-                    text = strip_underdog_links(title)
+                    post = extract_post(summary, username, post_id)
 
                     new_posts.append({
-                        "text": text,
-                        "images": media["images"],
-                        "video_url": media["video_url"],
+                        "text": post["text"],
+                        "images": post["images"],
+                        "video_url": post["video_url"],
                     })
 
     except Exception as e:
