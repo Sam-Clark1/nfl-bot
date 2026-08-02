@@ -2,8 +2,9 @@ import discord
 from discord.ext import tasks
 import os
 import io
-import aiohttp # pyright: ignore[reportMissingImports]
-from dotenv import load_dotenv # pyright: ignore[reportMissingImports]
+import aiohttp
+from PIL import Image
+from dotenv import load_dotenv
 from scraper import get_new_posts
 
 load_dotenv()
@@ -12,6 +13,8 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
 POLL_INTERVAL = int(os.environ['POLL_INTERVAL'])
 SEEN_FILE = os.getenv('SEEN_FILE')
+
+IMAGE_MAX_WIDTH = 400
 
 intents = discord.Intents.default()
 intents.members = True
@@ -31,6 +34,17 @@ async def seed_seen_posts():
         get_new_posts(seed=True)
         print('Seeding done. Bot will now only post new tweets going forward.')
 
+def resize_image(data: bytes) -> bytes:
+    image = Image.open(io.BytesIO(data))
+    if image.width <= IMAGE_MAX_WIDTH:
+        return data
+    ratio = IMAGE_MAX_WIDTH / image.width
+    new_size = (IMAGE_MAX_WIDTH, round(image.height * ratio))
+    resized = image.resize(new_size, Image.LANCZOS)
+    output = io.BytesIO()
+    resized.save(output, format=image.format or 'PNG')
+    return output.getvalue()
+
 async def download_images(urls: list[str]) -> list[discord.File]:
     files = []
     async with aiohttp.ClientSession() as session:
@@ -39,6 +53,7 @@ async def download_images(urls: list[str]) -> list[discord.File]:
                 async with session.get(url) as resp:
                     if resp.status == 200:
                         data = await resp.read()
+                        data = resize_image(data)
                         filename = url.split('/')[-1].split('?')[0] or 'image.jpg'
                         files.append(discord.File(io.BytesIO(data), filename=filename))
             except Exception as e:
