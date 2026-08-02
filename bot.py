@@ -3,6 +3,7 @@ from discord.ext import tasks
 import os
 import io
 import aiohttp
+from datetime import datetime
 from PIL import Image
 from dotenv import load_dotenv
 from scraper import get_new_posts
@@ -15,6 +16,17 @@ POLL_INTERVAL = int(os.environ['POLL_INTERVAL'])
 SEEN_FILE = os.getenv('SEEN_FILE')
 
 IMAGE_MAX_WIDTH = 400
+
+POLL_START_HOUR = 7
+POLL_END_HOUR = 0
+
+def is_polling_hours() -> bool:
+    hour = datetime.now().hour
+    if POLL_START_HOUR == POLL_END_HOUR:
+        return True
+    if POLL_START_HOUR < POLL_END_HOUR:
+        return POLL_START_HOUR <= hour < POLL_END_HOUR
+    return hour >= POLL_START_HOUR or hour < POLL_END_HOUR
 
 intents = discord.Intents.default()
 intents.members = True
@@ -62,6 +74,9 @@ async def download_images(urls: list[str]) -> list[discord.File]:
 
 @tasks.loop(seconds=POLL_INTERVAL)
 async def poll_news():
+    if not is_polling_hours():
+        return
+
     channel = bot.get_channel(CHANNEL_ID)
     if not channel:
         print('Channel not found!')
