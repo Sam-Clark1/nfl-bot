@@ -55,6 +55,11 @@ def has_quoted_tweet(html: str) -> bool:
 def extract_post(html: str, username: str, post_id: str) -> dict:
     soup = BeautifulSoup(html, "html.parser")
 
+    for node in soup.find_all(string=True):
+        normalized = re.sub(r'\s+', ' ', node)
+        if normalized != str(node):
+            node.replace_with(normalized)
+
     for br in soup.find_all('br'):
         br.replace_with('\n')
     for p in soup.find_all('p'):
