@@ -118,6 +118,7 @@ def get_new_posts(seed=False) -> list[dict]:
                     post = extract_post(summary, username, post_id)
 
                     new_posts.append({
+                        "id": post_id,
                         "text": post["text"],
                         "images": post["images"],
                         "video_url": post["video_url"],
