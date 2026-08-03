@@ -105,7 +105,7 @@ bot = discord.Client(intents=intents)
 @bot.event
 async def on_ready():
     print(f'Bot is online as {bot.user}')
-    # await seed_seen_posts()
+    await seed_seen_posts()
     poll_news.start()
 
 async def seed_seen_posts():
