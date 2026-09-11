@@ -154,7 +154,7 @@ async def poll_news():
         posts = get_new_posts(account['rss_url'], account['seen_file'], account['name'])
 
         for post in posts:
-            content = f"**{post['account']}**\n{post['text']}"
+            content = post['text']
             if post.get('video_url'):
                 video_info = await get_direct_video_info(post['id'])
                 direct_url = video_info['url'] if video_info else post['video_url']
