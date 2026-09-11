@@ -8,18 +8,32 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-RSS_URL = os.environ['RSS_URL']
-SEEN_FILE = os.environ['SEEN_FILE']
+def load_accounts():
+    accounts = []
+    i = 1
+    while True:
+        name = os.getenv(f'ACCOUNT_{i}_NAME')
+        if not name:
+            break
+        accounts.append({
+            "name": name,
+            "rss_url": os.getenv(f'ACCOUNT_{i}_RSS_URL'),
+            "seen_file": os.getenv(f'ACCOUNT_{i}_SEEN_FILE'),
+        })
+        i += 1
+    return accounts
+
+ACCOUNTS = load_accounts()
 MAX_SEEN = 40
 
-def load_seen():
-    if os.path.exists(SEEN_FILE):
-        with open(SEEN_FILE, "r") as f:
+def load_seen(seen_file: str):
+    if os.path.exists(seen_file):
+        with open(seen_file, "r") as f:
             return list(json.load(f))
     return list()
 
-def save_seen(seen):
-    with open(SEEN_FILE, "w") as f:
+def save_seen(seen, seen_file: str):
+    with open(seen_file, "w") as f:
         json.dump(list(seen), f)
 
 def add_seen(seen, post_id, seed):
@@ -88,12 +102,12 @@ def extract_post(html: str, username: str, post_id: str) -> dict:
 
     return {"text": text, "images": images, "video_url": video_url}
 
-def get_new_posts(seed=False) -> list[dict]:
-    seen = load_seen()
+def get_new_posts(rss_url: str, seen_file: str, account_name: str, seed=False) -> list[dict]:
+    seen = load_seen(seen_file)
     new_posts = []
 
     try:
-        feed = feedparser.parse(RSS_URL, request_headers={"User-Agent": "Mozilla/5.0"})
+        feed = feedparser.parse(rss_url, request_headers={"User-Agent": "Mozilla/5.0"})
 
         for entry in feed.entries:
             post_id = entry.get("id").split("/")[-1]
@@ -119,15 +133,16 @@ def get_new_posts(seed=False) -> list[dict]:
 
                     new_posts.append({
                         "id": post_id,
+                        "account": account_name,
                         "text": post["text"],
                         "images": post["images"],
                         "video_url": post["video_url"],
                     })
 
     except Exception as e:
-        print(f"Error fetching NFL feed: {e}")
+        print(f"Error fetching {account_name} feed: {e}")
 
-    save_seen(seen)
+    save_seen(seen, seen_file)
     new_posts.reverse()
 
     return new_posts

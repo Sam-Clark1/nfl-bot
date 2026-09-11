@@ -7,14 +7,13 @@ import aiohttp
 from datetime import datetime
 from PIL import Image
 from dotenv import load_dotenv
-from scraper import get_new_posts
+from scraper import get_new_posts, ACCOUNTS
 
 load_dotenv()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
 POLL_INTERVAL = int(os.environ['POLL_INTERVAL'])
-SEEN_FILE = os.getenv('SEEN_FILE')
 
 IMAGE_MAX_WIDTH = 400
 
@@ -109,10 +108,11 @@ async def on_ready():
     poll_news.start()
 
 async def seed_seen_posts():
-    if not os.path.exists(SEEN_FILE) or os.path.getsize(SEEN_FILE) == 0:
-        print('First run detected — seeding seen posts without posting...')
-        get_new_posts(seed=True)
-        print('Seeding done. Bot will now only post new tweets going forward.')
+    for account in ACCOUNTS:
+        if not os.path.exists(account['seen_file']) or os.path.getsize(account['seen_file']) == 0:
+            print(f"First run detected for {account['name']} — seeding seen posts without posting...")
+            get_new_posts(account['rss_url'], account['seen_file'], account['name'], seed=True)
+    print('Seeding done. Bot will now only post new tweets going forward.')
 
 def resize_image(data: bytes) -> bytes:
     image = Image.open(io.BytesIO(data))
@@ -150,16 +150,17 @@ async def poll_news():
         print('Channel not found!')
         return
 
-    posts = get_new_posts()
+    for account in ACCOUNTS:
+        posts = get_new_posts(account['rss_url'], account['seen_file'], account['name'])
 
-    for post in posts:
-        content = post['text']
-        if post.get('video_url'):
-            video_info = await get_direct_video_info(post['id'])
-            direct_url = video_info['url'] if video_info else post['video_url']
-            content += f"\n[▻]({direct_url})"
+        for post in posts:
+            content = f"**{post['account']}**\n{post['text']}"
+            if post.get('video_url'):
+                video_info = await get_direct_video_info(post['id'])
+                direct_url = video_info['url'] if video_info else post['video_url']
+                content += f"\n[▻]({direct_url})"
 
-        files = await download_images(post.get('images', []))
-        await channel.send(content=content, files=files)
+            files = await download_images(post.get('images', []))
+            await channel.send(content=content, files=files)
 
 bot.run(TOKEN)
