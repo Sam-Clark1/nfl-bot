@@ -1,5 +1,6 @@
 .env
-seen_posts.json
+seen_underdognfl.json
+seen_nfltdowns.json
 __pycache__
 .claude
 .vscode
