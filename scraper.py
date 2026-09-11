@@ -103,11 +103,8 @@ def extract_post(html: str, username: str, post_id: str) -> dict:
     text = re.sub(r'\n{3,}', '\n\n', text).strip()
 
     if 'gneiffer07' in text.lower():
-        lines = text.split('\n')
-        if lines:
-            lines[0] = GNEIFFER_HEADER
-        lines = [line for line in lines if 'actionapp' not in line.lower()]
-        text = "\n".join(lines)
+        lines = [line for line in text.split('\n') if 'actionapp' not in line.lower()]
+        text = GNEIFFER_HEADER + "\n\n" + "\n".join(lines)
         text = re.sub(r'\n{3,}', '\n\n', text).strip()
         video_url = None
 
