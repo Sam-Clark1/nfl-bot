@@ -15,10 +15,13 @@ def load_accounts():
         name = os.getenv(f'ACCOUNT_{i}_NAME')
         if not name:
             break
+        days_raw = os.getenv(f'ACCOUNT_{i}_DAYS')
+        days = [d.strip().lower() for d in days_raw.split(',')] if days_raw else None
         accounts.append({
             "name": name,
             "rss_url": os.getenv(f'ACCOUNT_{i}_RSS_URL'),
             "seen_file": os.getenv(f'ACCOUNT_{i}_SEEN_FILE'),
+            "days": days,
         })
         i += 1
     return accounts
