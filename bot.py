@@ -5,6 +5,7 @@ import io
 import math
 import aiohttp
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from PIL import Image
 from dotenv import load_dotenv
 from scraper import get_new_posts, ACCOUNTS
@@ -20,8 +21,13 @@ IMAGE_MAX_WIDTH = 400
 POLL_START_HOUR = 7
 POLL_END_HOUR = 0
 
+TIMEZONE = ZoneInfo("America/New_York")
+
+def now_est() -> datetime:
+    return datetime.now(TIMEZONE)
+
 def is_polling_hours() -> bool:
-    hour = datetime.now().hour
+    hour = now_est().hour
     if POLL_START_HOUR == POLL_END_HOUR:
         return True
     if POLL_START_HOUR < POLL_END_HOUR:
@@ -33,7 +39,7 @@ DAY_ABBREVIATIONS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 def is_active_day(days) -> bool:
     if not days:
         return True
-    today = DAY_ABBREVIATIONS[datetime.now().weekday()]
+    today = DAY_ABBREVIATIONS[now_est().weekday()]
     return today in days
 
 BASE36_DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
