@@ -28,6 +28,14 @@ def is_polling_hours() -> bool:
         return POLL_START_HOUR <= hour < POLL_END_HOUR
     return hour >= POLL_START_HOUR or hour < POLL_END_HOUR
 
+DAY_ABBREVIATIONS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+
+def is_active_day(days) -> bool:
+    if not days:
+        return True
+    today = DAY_ABBREVIATIONS[datetime.now().weekday()]
+    return today in days
+
 BASE36_DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 def to_base36(n: int) -> str:
@@ -151,6 +159,9 @@ async def poll_news():
         return
 
     for account in ACCOUNTS:
+        if not is_active_day(account.get('days')):
+            continue
+
         posts = get_new_posts(account['rss_url'], account['seen_file'], account['name'])
 
         for post in posts:
