@@ -69,8 +69,6 @@ def strip_underdog_links(text: str) -> str:
 def has_quoted_tweet(html: str) -> bool:
     return bool(BeautifulSoup(html, "html.parser").find("blockquote"))
 
-GNEIFFER_HEADER = "<:big_brain:1535327349091074220> Going Long With Grant <:big_brain:1535327349091074220>"
-
 def extract_post(html: str, username: str, post_id: str) -> dict:
     soup = BeautifulSoup(html, "html.parser")
 
@@ -105,12 +103,6 @@ def extract_post(html: str, username: str, post_id: str) -> dict:
     text = "\n".join(line.strip() for line in text.split("\n"))
     text = re.sub(r'\n{3,}', '\n\n', text).strip()
 
-    if 'gneiffer07' in text.lower():
-        lines = [line for line in text.split('\n') if 'actionapp' not in line.lower()]
-        text = GNEIFFER_HEADER + "\n\n" + "\n".join(lines)
-        text = re.sub(r'\n{3,}', '\n\n', text).strip()
-        video_url = None
-
     return {"text": text, "images": images, "video_url": video_url}
 
 def get_new_posts(rss_url: str, seen_file: str, account_name: str, seed=False) -> list[dict]:
@@ -137,6 +129,9 @@ def get_new_posts(rss_url: str, seen_file: str, account_name: str, seed=False) -
                     summary = entry.get("summary", "")
 
                     if has_quoted_tweet(summary):
+                        continue
+
+                    if 'gneiffer07' in summary.lower():
                         continue
 
                     username = entry.get("author", "").lstrip('@')
